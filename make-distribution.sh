@@ -58,6 +58,7 @@ echo "Version is ${VERSION}"
 # Initialize defaults
 SPARK_HADOOP_VERSION=1.0.4
 SPARK_YARN=false
+SPARK_TACHYON=false
 MAKE_TGZ=false
 
 # Parse arguments
@@ -69,6 +70,9 @@ while (( "$#" )); do
       ;;
     --with-yarn)
       SPARK_YARN=true
+      ;;
+    --with-tachyon)
+      SPARK_TACHYON=true
       ;;
     --tgz)
       MAKE_TGZ=true
@@ -90,9 +94,16 @@ else
   echo "YARN disabled"
 fi
 
+if [ "$SPARK_TACHYON" == "true" ]; then
+  echo "TACHYON enabled"
+else
+  echo "TACHYON disabled"
+fi
+
 # Build fat JAR
 export SPARK_HADOOP_VERSION
 export SPARK_YARN
+export SPARK_TACHYON
 cd $FWDIR
 
 "sbt/sbt" "assembly/assembly"
@@ -111,6 +122,11 @@ cp "$FWDIR"/conf/*.template "$DISTDIR"/conf
 cp -r "$FWDIR/bin" "$DISTDIR"
 cp -r "$FWDIR/python" "$DISTDIR"
 cp -r "$FWDIR/sbin" "$DISTDIR"
+
+# copy tachyon jar if requested
+if [ "$SPARK_TACHYON" == "true" ]; then
+  cp "$FWDIR/lib_managed/jars/tachyon-0.4.0-jar-with-dependencies.jar" "$DISTDIR/jars"
+fi
 
 
 if [ "$MAKE_TGZ" == "true" ]; then

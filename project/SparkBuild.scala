@@ -41,6 +41,8 @@ object SparkBuild extends Build {
   // HBase version; set as appropriate.
   val HBASE_VERSION = "0.94.6"
 
+  val DEFAULT_TACHYON = false
+
   // Target JVM version
   val SCALAC_JVM_VERSION = "jvm-1.6"
   val JAVAC_JVM_VERSION = "1.6"
@@ -94,6 +96,11 @@ object SparkBuild extends Build {
 
   lazy val maybeYarn = if (isYarnEnabled) Seq[ClasspathDependency](if (isNewHadoop) yarn else yarnAlpha) else Seq[ClasspathDependency]()
   lazy val maybeYarnRef = if (isYarnEnabled) Seq[ProjectReference](if (isNewHadoop) yarn else yarnAlpha) else Seq[ProjectReference]()
+
+  lazy val includeTachyon = Properties.envOrNone("SPARK_TACHYON") match {
+    case None => DEFAULT_TACHYON
+    case Some(v) => v.toBoolean
+  }
 
   lazy val externalTwitter = Project("external-twitter", file("external/twitter"), settings = twitterSettings)
     .dependsOn(streaming % "compile->compile;test->test")
@@ -381,13 +388,22 @@ object SparkBuild extends Build {
     )
   )
 
+  // Include library dependency on tachyon if its enabled
+  def tachyonSettings = if (includeTachyon) tachyonEnabledSettings else Seq()
+  def tachyonEnabledSettings = {
+    Seq(
+      libraryDependencies += "org.tachyonproject" % "tachyon" % "0.4.0" classifier "jar-with-dependencies"
+    )
+  }
+
+
   def assemblyProjSettings = sharedSettings ++ Seq(
     libraryDependencies += "net.sf.py4j" % "py4j" % "0.8.1",
     name := "spark-assembly",
     assembleDeps in Compile <<= (packageProjects.map(packageBin in Compile in _) ++ Seq(packageDependency in Compile)).dependOn,
     jarName in assembly <<= version map { v => "spark-assembly-" + v + "-hadoop" + hadoopVersion + ".jar" },
     jarName in packageDependency <<= version map { v => "spark-assembly-" + v + "-hadoop" + hadoopVersion + "-deps.jar" }
-  ) ++ assemblySettings ++ extraAssemblySettings
+  ) ++ assemblySettings ++ extraAssemblySettings ++ tachyonSettings
 
   def extraAssemblySettings() = Seq(
     test in assembly := {},
@@ -398,6 +414,9 @@ object SparkBuild extends Build {
       case m if m.toLowerCase.startsWith("meta-inf/services/") => MergeStrategy.filterDistinctLines
       case "reference.conf" => MergeStrategy.concat
       case _ => MergeStrategy.first
+    },
+    excludedJars in assembly <<= (fullClasspath in assembly) map { cp =>
+      cp filter {_.data.getName == "tachyon-0.4.0-jar-with-dependencies.jar"}
     }
   )
 
