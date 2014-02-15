@@ -25,3 +25,7 @@ sbin=`cd "$sbin"; pwd`
 . "$sbin/spark-config.sh"
 
 "$sbin"/spark-daemon.sh stop org.apache.spark.deploy.master.Master 1
+
+if "$sbin"/tachyon/bin/stop-master.sh | grep -q "Killed 1"; then
+  echo "Stopped tachyon master"
+fi
