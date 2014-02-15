@@ -28,8 +28,8 @@ TACHYON_STR=""
 
 while (( "$#" )); do
   case $1 in
-    --tachyon)
-      TACHYON_STR="--tachyon"
+    --with-tachyon)
+      TACHYON_STR="--with-tachyon"
       ;;
   esac
   shift

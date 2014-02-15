@@ -24,7 +24,7 @@ START_TACHYON=false
 
 while (( "$#" )); do
   case $1 in
-    --tachyon)
+    --with-tachyon)
       START_TACHYON=true
       ;;
   esac
