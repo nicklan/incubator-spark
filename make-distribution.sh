@@ -141,6 +141,10 @@ if [ "$SPARK_TACHYON" == "true" ]; then
   cp -r "tachyon-${TACHYON_VERSION}"/src/main/java/tachyon/web/resources "$DISTDIR/sbin/tachyon/src/main/java/tachyon/web"
   sed -i "s|export TACHYON_JAR=\$TACHYON_HOME/target/\(.*\)|# This is set for spark's make-distribution\n  export TACHYON_JAR=\$TACHYON_HOME/../../jars/\1|" "$DISTDIR/sbin/tachyon/libexec/tachyon-config.sh"
 
+  # add env opt to make webapp work
+  (head -n -1 "$DISTDIR/sbin/tachyon/conf/tachyon-env.sh.template"; echo -e "  -Dorg.apache.jasper.compiler.disablejsr199=true\n\"") > "$TMPD/tachyon-env.sh.template.new"
+  mv "$TMPD/tachyon-env.sh.template.new" "$DISTDIR/sbin/tachyon/conf/tachyon-env.sh.template"
+
   popd > /dev/null
   rm -rf $TMPD
 fi
